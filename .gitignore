@@ -1,0 +1,21 @@
+# Secrets -- never commit these
+.env
+
+# Local database (contains real user passwords/history)
+database/app.db
+
+# Uploaded files / local data (not needed in the repo)
+data/uploaded_pdfs/*
+!data/uploaded_pdfs/.gitkeep
+
+vector_store/*
+!vector_store/.gitkeep
+
+# Python cache
+__pycache__/
+*.pyc
+modules/__pycache__/
+
+# OS/editor junk
+.DS_Store
+.vscode/
