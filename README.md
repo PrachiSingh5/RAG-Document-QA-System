@@ -4,6 +4,8 @@ An AI-powered assistant that lets users upload PDFs (including scanned
 documents and images) and ask natural-language questions about their
 content, with cited sources and page numbers.
 
+🔗 **Live app:** https://rag-document-app-system-eg9ungzfnxdj9dtppngcge.streamlit.app/
+
 ## Features
 
 - **Multi-PDF upload** with per-file processing progress
@@ -21,6 +23,9 @@ content, with cited sources and page numbers.
 - **Persistent chat history** per user, viewable and deletable from the sidebar
 - **Conversation memory** within a session (follow-up questions like "what
   about him?" are understood using recent chat history)
+- **Deployed publicly** on Streamlit Community Cloud, with system
+  dependencies (Tesseract OCR) configured via `packages.txt` and secrets
+  (Groq API key) managed through Streamlit's encrypted Secrets panel
 
 ## Tech Stack
 
@@ -32,9 +37,11 @@ content, with cited sources and page numbers.
 | Embeddings | Sentence-Transformers (`all-MiniLM-L6-v2`) |
 | Vector search | FAISS |
 | LLM (answers) | Groq (`openai/gpt-oss-120b`) |
-| LLM (vision/diagrams) | Groq (`qwen/qwen3.6-27b`) |
+| LLM (vision/diagrams) | Groq (`qwen/qwen3.8-27b`) |
 | Database | SQLite |
 | Password hashing | bcrypt |
+| Deployment | Streamlit Community Cloud |
+| Version control | Git + GitHub |
 
 ## Project Structure
 
@@ -43,29 +50,32 @@ RAG-Document-QA-System/
 │
 ├── app.py                  # Main Streamlit app
 ├── .env                     # Contains GROQ_API_KEY (not committed)
-├── requirements.txt
+├── requirements.txt          # Python dependencies
+├── packages.txt               # System dependencies (Tesseract, for deployment)
 │
 ├── modules/
-│   ├── pdf_loader.py        # Extracts text + page numbers from PDFs
-│   ├── ocr.py                # OCR fallback for scanned PDFs + page rendering
-│   ├── vision.py             # Image/diagram description via Groq Vision
-│   ├── chunker.py            # Splits extracted text into chunks
-│   ├── embeddings.py         # Creates sentence embeddings
-│   ├── vector_store.py       # Builds/queries the FAISS index
-│   ├── retriever.py          # Retrieves relevant chunks (per-PDF fairness)
-│   ├── llm.py                 # Generates answers via Groq
-│   ├── auth.py                # Signup/login logic + password hashing
-│   ├── auth_ui.py             # Login/signup screen (swappable UI)
-│   └── db.py                   # SQLite: users + chat history
+│   ├── pdf_loader.py         # Extracts text + page numbers from PDFs
+│   ├── ocr.py                 # OCR fallback for scanned PDFs + page rendering
+│   ├── vision.py               # Image/diagram description via Groq Vision
+│   ├── chunker.py               # Splits extracted text into chunks
+│   ├── embeddings.py             # Creates sentence embeddings
+│   ├── vector_store.py            # Builds/queries the FAISS index
+│   ├── retriever.py                # Retrieves relevant chunks (per-PDF fairness)
+│   ├── llm.py                       # Generates answers via Groq
+│   ├── auth.py                       # Signup/login logic + password hashing
+│   ├── auth_ui.py                     # Login/signup screen (swappable UI)
+│   └── db.py                           # SQLite: users + chat history
 │
 ├── database/
-│   └── app.db                # Auto-created on first run
+│   └── app.db                # Auto-created on first run (not committed)
 │
-└── data/
-    └── uploaded_pdfs/
+├── docs/
+│   └── demo_checklist.md    # Suggested order for presenting the project
+│
+└── screenshots/               # App screenshots for reports/documentation
 ```
 
-## Setup
+## Setup (running locally)
 
 1. Install dependencies:
    ```
@@ -87,16 +97,30 @@ RAG-Document-QA-System/
 
 5. Create an account from the Sign Up tab, then log in.
 
+## Deployment
+
+This app is deployed on **Streamlit Community Cloud**, connected directly
+to this GitHub repository:
+
+1. Code pushed to GitHub (`.env` and `database/app.db` excluded via
+   `.gitignore` to keep secrets and user data private)
+2. `packages.txt` tells the server to install Tesseract OCR
+3. `requirements.txt` pins compatible package versions (including a
+   pinned `httpx` version to avoid a known Groq SDK compatibility issue)
+4. The Groq API key is provided through Streamlit Cloud's encrypted
+   **Secrets** panel, not committed to the repo
+5. Every push to the `main` branch automatically triggers a redeploy
+
 ## Notes
 
-- The SQLite database (`database/app.db`) and any uploaded documents are
-  created locally and are not included in version control.
 - Login sessions last for the current browser tab only (no persistent
   "remember me" cookie) — logging out or closing the tab requires
   logging back in.
 - Groq's model lineup changes periodically; if `llm.py` or `vision.py`
   report a model error, check https://console.groq.com/docs/models
   for currently available model names.
+- Large scanned PDFs (many pages) can take a few minutes to process on
+  first upload, since OCR runs page-by-page.
 
 ## Future Improvements
 
@@ -104,4 +128,4 @@ RAG-Document-QA-System/
   retrieval entirely
 - Per-document management (delete/rename uploaded documents)
 - Reranking retrieved chunks before sending to the LLM
-- Deployment to a public hosting platform
+- Persistent vector store storage across sessions
